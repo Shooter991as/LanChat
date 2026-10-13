@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Box, Flex, Text, Input, Button, Stack, Field } from "@chakra-ui/react";
 import { changePassword, deleteAccount } from "../../api/account";
+import { isStrongPassword } from "../../utils/validation";
+import { PasswordChecklist } from "./PasswordChecklist";
+import { colors } from "../../theme/colors";
 
 export function SettingsPanel({ user, onClose, onAccountDeleted }) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -8,6 +11,7 @@ export function SettingsPanel({ user, onClose, onAccountDeleted }) {
   const [pwMessage, setPwMessage] = useState("");
   const [pwError, setPwError] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
+  const [newPwFocused, setNewPwFocused] = useState(false);
 
   const [deletePassword, setDeletePassword] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -18,8 +22,8 @@ export function SettingsPanel({ user, onClose, onAccountDeleted }) {
     e.preventDefault();
     setPwError("");
     setPwMessage("");
-    if (newPassword.length < 6) {
-      setPwError("New password must be at least 6 characters.");
+    if (!isStrongPassword(newPassword)) {
+      setPwError("New password doesn't meet the requirements below.");
       return;
     }
     setPwLoading(true);
@@ -53,96 +57,74 @@ export function SettingsPanel({ user, onClose, onAccountDeleted }) {
   };
 
   return (
-    <Flex
-      position="fixed" inset="0" bg="blackAlpha.700"
-      align="center" justify="center" zIndex={10}
-      onClick={onClose}
-    >
+    <Flex position="fixed" inset="0" bg="rgba(0,0,0,0.6)" align="center" justify="center" zIndex={20} p={4} onClick={onClose}>
       <Box
-        w="380px"
-        bg="blackAlpha.800"
-        backdropFilter="blur(10px)"
-        border="1px solid"
-        borderColor="whiteAlpha.300"
-        borderRadius="md"
-        p={6}
-        onClick={(e) => e.stopPropagation()} // don't close when clicking inside the panel
+        w="100%" maxW="400px"
+        bg={colors.panel}
+        border="1px solid" borderColor={colors.border}
+        borderRadius="lg" p={6}
+        maxH="90dvh" overflowY="auto"
+        onClick={(e) => e.stopPropagation()}
       >
-        <Text fontFamily="serif" fontSize="lg" color="whiteAlpha.900" mb={6}>
+        <Text fontFamily="serif" fontSize="lg" color={colors.textHi} mb={6}>
           Settings — {user.username}
         </Text>
 
-        {/* Change password */}
-        <Text fontSize="sm" color="whiteAlpha.700" mb={2}>Change Password</Text>
+        <Text fontSize="sm" color={colors.textMid} mb={2}>Change Password</Text>
         <form onSubmit={handleChangePassword}>
           <Stack gap={3} mb={6}>
             <Field.Root>
               <Input
-                type="password"
-                placeholder="current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                _placeholder={{ color: "whiteAlpha.500" }}
+                type="password" placeholder="current password"
+                value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)}
+                bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                _placeholder={{ color: colors.textDim }}
               />
             </Field.Root>
             <Field.Root>
               <Input
-                type="password"
-                placeholder="new password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                _placeholder={{ color: "whiteAlpha.500" }}
+                type="password" placeholder="new password"
+                value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                onFocus={() => setNewPwFocused(true)}
+                bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                _placeholder={{ color: colors.textDim }}
               />
+              {(newPwFocused || newPassword) && <PasswordChecklist password={newPassword} />}
             </Field.Root>
-            {pwError && <Text fontSize="xs" color="red.300">{pwError}</Text>}
-            {pwMessage && <Text fontSize="xs" color="green.300">{pwMessage}</Text>}
-            <Button
-              type="submit" loading={pwLoading} size="sm"
-              bg="whiteAlpha.900" color="blackAlpha.900" _hover={{ bg: "white" }}
-            >
+            {pwError && <Text fontSize="xs" color={colors.danger}>{pwError}</Text>}
+            {pwMessage && <Text fontSize="xs" color={colors.online}>{pwMessage}</Text>}
+            <Button type="submit" loading={pwLoading} size="sm" bg={colors.accent} color="white" _hover={{ bg: colors.accentHover }}>
               Update Password
             </Button>
           </Stack>
         </form>
 
-        {/* Delete account */}
-        <Box borderTop="1px solid" borderColor="whiteAlpha.300" pt={4}>
-          <Text fontSize="sm" color="red.300" mb={2}>Delete Account</Text>
+        <Box borderTop="1px solid" borderColor={colors.border} pt={4}>
+          <Text fontSize="sm" color={colors.danger} mb={2}>Delete Account</Text>
           {!confirmingDelete ? (
-            <Button
-              size="sm" variant="outline" borderColor="red.400" color="red.300"
-              onClick={() => setConfirmingDelete(true)}
-            >
+            <Button size="sm" variant="outline" borderColor={colors.danger} color={colors.danger} onClick={() => setConfirmingDelete(true)}>
               Delete my account
             </Button>
           ) : (
             <Stack gap={3}>
-              <Text fontSize="xs" color="whiteAlpha.700">
+              <Text fontSize="xs" color={colors.textMid}>
                 This permanently deletes your account and all your messages. Enter your password to confirm.
               </Text>
               <Input
-                type="password"
-                placeholder="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                _placeholder={{ color: "whiteAlpha.500" }}
+                type="password" placeholder="password"
+                value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)}
+                bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                _placeholder={{ color: colors.textDim }}
               />
-              {deleteError && <Text fontSize="xs" color="red.300">{deleteError}</Text>}
-              <Button
-                size="sm" loading={deleteLoading}
-                bg="red.500" color="white" _hover={{ bg: "red.600" }}
-                onClick={handleDelete}
-              >
+              {deleteError && <Text fontSize="xs" color={colors.danger}>{deleteError}</Text>}
+              <Button size="sm" loading={deleteLoading} bg={colors.danger} color="white" _hover={{ bg: colors.dangerHover }} onClick={handleDelete}>
                 Confirm Delete
               </Button>
             </Stack>
           )}
         </Box>
 
-        <Button mt={6} size="sm" variant="ghost" color="whiteAlpha.700" onClick={onClose}>
+        <Button mt={6} size="sm" variant="ghost" color={colors.textMid} onClick={onClose}>
           Close
         </Button>
       </Box>

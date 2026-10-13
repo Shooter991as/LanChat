@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LanChat System Architecture",
+    "subtitle": "LAN-based Real-time Chat Application Runtime",
+    "output": ".archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:Shooter991as/LanChat.git",
+      "revision": "76c42f5a47cbbe305e8c4abcf78db51ceb350e1d",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Browser Client",
+      "sublabel": "React + Vite SPA",
+      "icon": "frontend",
+      "pos": [60, 320],
+      "size": [160, 70],
+      "sources": [
+        { "path": "frontend/src/App.jsx", "line": 7, "end_line": 51 },
+        { "path": "frontend/src/socket.js", "line": 6, "end_line": 19 }
+      ]
+    },
+    {
+      "id": "auth_module",
+      "type": "security",
+      "label": "JWT & Bcrypt Auth",
+      "sublabel": "Token Signing & Validation",
+      "icon": "security",
+      "pos": [300, 80],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/controllers/authController.js", "line": 5, "end_line": 59 },
+        { "path": "backend/middleware/auth.js", "line": 4, "end_line": 17 }
+      ]
+    },
+    {
+      "id": "express_api",
+      "type": "backend",
+      "label": "Express REST API",
+      "sublabel": "Auth, History & Account Routes",
+      "icon": "backend",
+      "pos": [300, 240],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/server.js", "line": 20, "end_line": 32 },
+        { "path": "backend/routes/messageRoutes.js", "line": 8, "end_line": 39 }
+      ]
+    },
+    {
+      "id": "socket_server",
+      "type": "backend",
+      "label": "Socket.IO Server",
+      "sublabel": "Messages & Presence Engine",
+      "icon": "backend",
+      "pos": [300, 400],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/server.js", "line": 34, "end_line": 141 }
+      ]
+    },
+    {
+      "id": "upload_handler",
+      "type": "backend",
+      "label": "Multer Upload Service",
+      "sublabel": "File Uploads Handler",
+      "icon": "backend",
+      "pos": [300, 560],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/routes/uploadRoutes.js", "line": 10, "end_line": 28 }
+      ]
+    },
+    {
+      "id": "mongodb",
+      "type": "database",
+      "label": "MongoDB Database",
+      "sublabel": "User & Message Collections",
+      "icon": "database",
+      "pos": [640, 240],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/config/db.js", "line": 3, "end_line": 12 },
+        { "path": "backend/models/Message.js", "line": 1, "end_line": 13 }
+      ]
+    },
+    {
+      "id": "media_storage",
+      "type": "database",
+      "label": "Disk Media Storage",
+      "sublabel": "backend/uploads/ Directory",
+      "icon": "database",
+      "pos": [640, 560],
+      "size": [180, 70],
+      "sources": [
+        { "path": "backend/routes/uploadRoutes.js", "line": 7, "end_line": 16 }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "LAN Network Environment",
+      "wraps": ["client", "express_api", "socket_server", "auth_module", "upload_handler", "mongodb", "media_storage"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Node.js Server Process (:5000)",
+      "wraps": ["express_api", "socket_server", "auth_module", "upload_handler"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-api",
+      "from": "client",
+      "to": "express_api",
+      "label": "REST HTTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "client-socket",
+      "from": "client",
+      "to": "socket_server",
+      "label": "Socket.IO WSS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "client-upload",
+      "from": "client",
+      "to": "upload_handler",
+      "label": "Multipart POST",
+      "variant": "dashed"
+    },
+    {
+      "id": "api-auth",
+      "from": "express_api",
+      "to": "auth_module",
+      "label": "Authenticate",
+      "variant": "security"
+    },
+    {
+      "id": "socket-auth",
+      "from": "socket_server",
+      "to": "auth_module",
+      "label": "Verify Token",
+      "variant": "security"
+    },
+    {
+      "id": "api-db",
+      "from": "express_api",
+      "to": "mongodb",
+      "label": "Mongoose CRUD"
+    },
+    {
+      "id": "socket-db",
+      "from": "socket_server",
+      "to": "mongodb",
+      "label": "Persist Messages"
+    },
+    {
+      "id": "upload-disk",
+      "from": "upload_handler",
+      "to": "media_storage",
+      "label": "Save Uploads"
+    },
+    {
+      "id": "api-disk",
+      "from": "express_api",
+      "to": "media_storage",
+      "label": "Serve Static"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Client & Network Layer",
+      "items": [
+        "React single-page application served via Vite",
+        "Socket.IO client for real-time bi-directional events",
+        "Direct HTTP REST API integration for authentication and message history"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend Services & Realtime Engine",
+      "items": [
+        "Express API handling REST routes and static asset distribution",
+        "Socket.IO server maintaining active user presence map",
+        "Event routing for public channel and direct messaging"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Security & Persistence",
+      "items": [
+        "JWT authentication on REST requests and Socket handshake",
+        "Bcrypt password hashing for secure user storage",
+        "MongoDB database storing user profiles and chat history",
+        "Local disk storage for uploaded media attachments"
+      ]
+    }
+  ]
+}

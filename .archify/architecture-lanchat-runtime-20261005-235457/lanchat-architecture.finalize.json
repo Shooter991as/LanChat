@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-05T18:27:50.996Z",
+  "specification": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+    "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+    "bytes": 5773
+  },
+  "artifact": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+    "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+    "bytes": 763369
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/usr/bin/node",
+        "/home/tls123/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/tls123/Projects/final_chat",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+          "bytes": 5773
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 366,
+      "command": [
+        "/usr/bin/node",
+        "/home/tls123/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/tls123/Projects/final_chat",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "0463cad7-2733-421f-a689-27a11e817132",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+        "output": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "specification": {
+          "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+          "bytes": 5773
+        },
+        "artifact": {
+          "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+          "bytes": 763369
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:Shooter991as/LanChat",
+          "revision": "76c42f5a47cbbe305e8c4abcf78db51ceb350e1d",
+          "references": 11,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 122,
+      "command": [
+        "/usr/bin/node",
+        "/home/tls123/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "artifact": {
+          "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+          "bytes": 763369
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 2,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 4.5,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 8,
+            "maxBends": 3,
+            "routesOverSuggestedBends": 2,
+            "maxStretch": 1.157,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 21,
+            "minInteriorSegmentPx": 21,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [
+              {
+                "left": {
+                  "id": "client-api",
+                  "from": "client",
+                  "to": "express_api",
+                  "label": "REST HTTP",
+                  "collectionIndex": 0,
+                  "artifactIndex": 1
+                },
+                "right": {
+                  "id": "socket-auth",
+                  "from": "socket_server",
+                  "to": "auth_module",
+                  "label": "Verify Token",
+                  "collectionIndex": 4,
+                  "artifactIndex": 5
+                },
+                "point": [
+                  276,
+                  275
+                ]
+              },
+              {
+                "left": {
+                  "id": "socket-db",
+                  "from": "socket_server",
+                  "to": "mongodb",
+                  "label": "Persist Messages",
+                  "collectionIndex": 6,
+                  "artifactIndex": 7
+                },
+                "right": {
+                  "id": "api-disk",
+                  "from": "express_api",
+                  "to": "media_storage",
+                  "label": "Serve Static",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "point": [
+                  560,
+                  334
+                ]
+              }
+            ],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "client-socket",
+                  "from": "client",
+                  "to": "socket_server",
+                  "label": "Socket.IO WSS",
+                  "collectionIndex": 1,
+                  "artifactIndex": 2
+                },
+                "bends": 3,
+                "stretch": 1
+              },
+              {
+                "relationship": {
+                  "id": "api-disk",
+                  "from": "express_api",
+                  "to": "media_storage",
+                  "label": "Serve Static",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 3,
+                "stretch": 1
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 50,
+            "emptyTopRatio": 0.07,
+            "occupiedTop": 50,
+            "viewBoxTop": 0,
+            "canvasHeight": 718,
+            "typicalNodeHeight": 70,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": true,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": "client-api",
+              "from": "client",
+              "to": "express_api"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 8,
+            "semanticTextCount": 25
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "0463cad7-2733-421f-a689-27a11e817132"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 8,
+      "command": [
+        "/usr/bin/node",
+        "/home/tls123/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "0463cad7-2733-421f-a689-27a11e817132",
+        "artifact": {
+          "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+          "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+          "bytes": 763369
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "not-checked",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/evidence-path-conflict",
+            "severity": "error",
+            "message": "browser-check will not replace the existing unowned evidence path \"/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json\".",
+            "subject": {
+              "artifact": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+              "evidencePath": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json"
+            },
+            "evidence": {
+              "reason": {
+                "code": "ownership-artifact-mismatch"
+              }
+            },
+            "supportedFixes": [
+              "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "lanchat-architecture.browser-check.json",
+          "files": []
+        },
+        "error": "browser-check will not replace the existing unowned evidence path \"/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json\"."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json\".",
+      "subject": {
+        "artifact": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "evidencePath": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.finalize.json",
+    "summaryReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.finalize-summary.json",
+    "browserCheckReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-05T18:27:51.561Z",
+  "durationMs": 564,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-05T18:25:18.609Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

@@ -21,7 +21,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serves uploaded files at http://<server>:5000/uploads/<filename>
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use("/api/auth", authRoutes);
@@ -109,27 +108,40 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Delete/unsend — only the original sender can delete their own message
-  socket.on("message:delete", async ({ id }) => {
+  // Delete/unsend — single id (quick delete) or a bulk ids array (multi-select).
+  // Either way, only the original sender's own messages are ever deleted —
+  // anything in the request that isn't theirs is silently dropped, not just skipped client-side.
+  socket.on("message:delete", async ({ id, ids }) => {
+    const targetIds = (ids && ids.length ? ids : id ? [id] : []).filter(Boolean);
+    if (!targetIds.length) return;
+
     try {
-      const msg = await Message.findById(id);
-      if (!msg) return;
-      if (msg.from !== socket.username) return; // silently ignore — not yours to delete
+      const msgs = await Message.find({ _id: { $in: targetIds }, from: socket.username });
+      if (!msgs.length) return;
 
-      await Message.findByIdAndDelete(id);
+      const deletableIds = msgs.map((m) => m._id.toString());
+      await Message.deleteMany({ _id: { $in: deletableIds } });
 
-      if (msg.type === "public") {
-        io.emit("message:deleted", { id, scope: "public" });
-      } else {
-        const otherParty = msg.to;
+      const publicIds = msgs.filter((m) => m.type === "public").map((m) => m._id.toString());
+      if (publicIds.length) {
+        io.emit("message:deleted", { ids: publicIds, scope: "public" });
+      }
+
+      // Group DM deletions by the other party, since each party only needs
+      // their own thread's ids, and we want one event per recipient, not one per message.
+      const dmGroups = {};
+      msgs.filter((m) => m.type === "dm").forEach((m) => {
+        (dmGroups[m.to] ||= []).push(m._id.toString());
+      });
+      for (const [otherParty, groupIds] of Object.entries(dmGroups)) {
         const recipientSocketId = onlineUsers.get(otherParty);
         if (recipientSocketId) {
-          io.to(recipientSocketId).emit("message:deleted", { id, scope: "dm", withUser: msg.from });
+          io.to(recipientSocketId).emit("message:deleted", { ids: groupIds, scope: "dm", withUser: socket.username });
         }
-        socket.emit("message:deleted", { id, scope: "dm", withUser: otherParty });
+        socket.emit("message:deleted", { ids: groupIds, scope: "dm", withUser: otherParty });
       }
     } catch (err) {
-      console.error("Failed to delete message:", err.message);
+      console.error("Failed to delete message(s):", err.message);
     }
   });
 

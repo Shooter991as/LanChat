@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+    "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+    "bytes": 5773
+  },
+  "artifact": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+    "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+    "bytes": 763369
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/out/lanchat-architecture.finalize.json",
+    "summaryReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/out/lanchat-architecture.finalize-summary.json",
+    "browserCheckReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/out/lanchat-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-05T18:25:18.609Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2053,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 2,
+      "routesOverSuggestedBends": 2
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "client-api",
+            "from": "client",
+            "to": "express_api",
+            "label": "REST HTTP",
+            "collectionIndex": 0,
+            "artifactIndex": 1
+          },
+          "right": {
+            "id": "socket-auth",
+            "from": "socket_server",
+            "to": "auth_module",
+            "label": "Verify Token",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "point": [
+            276,
+            275
+          ]
+        },
+        {
+          "left": {
+            "id": "socket-db",
+            "from": "socket_server",
+            "to": "mongodb",
+            "label": "Persist Messages",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "right": {
+            "id": "api-disk",
+            "from": "express_api",
+            "to": "media_storage",
+            "label": "Serve Static",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "point": [
+            560,
+            334
+          ]
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "client-socket",
+            "from": "client",
+            "to": "socket_server",
+            "label": "Socket.IO WSS",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "api-disk",
+            "from": "express_api",
+            "to": "media_storage",
+            "label": "Serve Static",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "bends": 3,
+          "stretch": 1
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "client → express_api crosses socket_server → auth_module: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "socket_server → mongodb crosses express_api → media_storage: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "client → socket_server needs 3 bends: move node client or socket_server so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "express_api → media_storage needs 3 bends: move node express_api or media_storage so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LAN Chat — System Flow Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0f1a;--surface:#131829;--border:#1e2642;
+  --accent:#6c5ce7;--accent2:#00cec9;--accent3:#fd79a8;--accent4:#fdcb6e;--accent5:#55efc4;
+  --text:#e2e8f0;--muted:#64748b;--white:#fff;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── Header ── */
+.header{text-align:center;padding:40px 20px 10px}
+.header h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--muted);margin-top:6px;font-size:.95rem}
+
+/* ── Canvas Container ── */
+.canvas-wrap{position:relative;width:1100px;height:820px;margin:30px auto 50px}
+
+/* ── SVG layer for arrows ── */
+.arrows{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.arrows line,.arrows path{stroke-width:2;fill:none}
+.arrow-rest{stroke:var(--accent);opacity:.55}
+.arrow-socket{stroke:var(--accent2);opacity:.55}
+.arrow-db{stroke:var(--accent3);opacity:.55}
+.arrow-file{stroke:var(--accent4);opacity:.55}
+.arrow-static{stroke:var(--accent5);opacity:.55}
+
+/* ── Animated dash ── */
+@keyframes dashMove{to{stroke-dashoffset:-20}}
+.arrows line,.arrows path{stroke-dasharray:8 6;animation:dashMove .9s linear infinite}
+
+/* ── Nodes ── */
+.node{
+  position:absolute;z-index:2;border-radius:14px;padding:18px 22px;
+  border:1px solid var(--border);cursor:pointer;transition:transform .25s,box-shadow .25s,border-color .25s;
+  display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;
+  backdrop-filter:blur(12px);
+}
+.node:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+.node .icon{font-size:2rem}
+.node .title{font-weight:700;font-size:.95rem}
+.node .sub{font-size:.72rem;color:var(--muted);max-width:170px;line-height:1.35}
+
+/* per-layer colors */
+.node-frontend{background:rgba(108,92,231,.12);border-color:rgba(108,92,231,.35)}
+.node-frontend:hover{border-color:var(--accent)}
+.node-api{background:rgba(0,206,201,.12);border-color:rgba(0,206,201,.35)}
+.node-api:hover{border-color:var(--accent2)}
+.node-data{background:rgba(253,121,168,.12);border-color:rgba(253,121,168,.35)}
+.node-data:hover{border-color:var(--accent3)}
+.node-file{background:rgba(253,203,110,.12);border-color:rgba(253,203,110,.35)}
+.node-file:hover{border-color:var(--accent4)}
+.node-util{background:rgba(85,239,196,.12);border-color:rgba(85,239,196,.35)}
+.node-util:hover{border-color:var(--accent5)}
+
+/* ── Tooltip ── */
+.tooltip{
+  position:absolute;z-index:100;background:#1a1f36;border:1px solid var(--border);
+  border-radius:12px;padding:16px 20px;width:320px;pointer-events:none;
+  opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;
+  box-shadow:0 12px 40px rgba(0,0,0,.55);
+}
+.tooltip.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.tooltip h3{font-weight:700;font-size:1rem;margin-bottom:6px}
+.tooltip p{font-size:.8rem;color:var(--muted);line-height:1.5}
+.tooltip .tech{display:inline-block;background:rgba(108,92,231,.2);color:var(--accent);padding:2px 8px;border-radius:6px;font-size:.7rem;margin:2px 2px 0 0}
+.tooltip .files{margin-top:8px;font-size:.75rem;color:#94a3b8;font-family:monospace}
+
+/* ── Legend ── */
+.legend{
+  display:flex;gap:20px;justify-content:center;flex-wrap:wrap;
+  margin:0 auto 20px;padding:14px 28px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;width:fit-content;
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* ── Label pills on arrows ── */
+.edge-label{
+  position:absolute;z-index:3;font-size:.65rem;font-weight:600;
+  padding:2px 8px;border-radius:6px;pointer-events:none;white-space:nowrap;
+}
+
+/* ── pulse rings ── */
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,.4)}50%{box-shadow:0 0 0 8px rgba(108,92,231,0)}}
+.node-frontend{animation:pulse 2.5s infinite}
+
+/* ── Footer ── */
+.footer{text-align:center;padding:20px;color:var(--muted);font-size:.75rem}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🖧 LAN Chat — System Flow Diagram</h1>
+  <p>Hover over any component to see details · Animated arrows show data direction</p>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Frontend (React)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>Backend API / Socket.IO</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div>Database (MongoDB)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent4)"></div>File Storage</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--accent5)"></div>Utilities / Middleware</div>
+</div>
+
+<div class="canvas-wrap" id="canvas">
+  <!-- ═══ SVG Arrows ═══ -->
+  <svg class="arrows" id="arrows"></svg>
+
+  <!-- ═══ FRONTEND LAYER ═══ -->
+  <div class="node node-frontend" id="n-login" style="left:40px;top:20px;width:160px"
+       data-tip="login">
+    <div class="icon">🔑</div><div class="title">Login Page</div>
+    <div class="sub">Username + password form</div>
+  </div>
+  <div class="node node-frontend" id="n-register" style="left:240px;top:20px;width:160px"
+       data-tip="register">
+    <div class="icon">📝</div><div class="title">Register Page</div>
+    <div class="sub">Account creation with password rules</div>
+  </div>
+  <div class="node node-frontend" id="n-chat" style="left:460px;top:20px;width:190px"
+       data-tip="chat">
+    <div class="icon">💬</div><div class="title">Chat Page</div>
+    <div class="sub">Public channel + DMs, presence sidebar</div>
+  </div>
+  <div class="node node-frontend" id="n-settings" style="left:700px;top:20px;width:170px"
+       data-tip="settings">
+    <div class="icon">⚙️</div><div class="title">Settings Panel</div>
+    <div class="sub">Change password, delete account</div>
+  </div>
+  <div class="node node-frontend" id="n-attach" style="left:910px;top:20px;width:160px"
+       data-tip="attach">
+    <div class="icon">📎</div><div class="title">Attachment Menu</div>
+    <div class="sub">10 file-type categories</div>
+  </div>
+
+  <!-- ═══ API LAYER ═══ -->
+  <div class="node node-frontend" id="n-apimod" style="left:30px;top:210px;width:180px"
+       data-tip="apimod">
+    <div class="icon">📡</div><div class="title">API Modules</div>
+    <div class="sub">auth · users · messages · upload · account</div>
+  </div>
+  <div class="node node-frontend" id="n-socketclient" style="left:260px;top:210px;width:180px"
+       data-tip="socketclient">
+    <div class="icon">⚡</div><div class="title">Socket.IO Client</div>
+    <div class="sub">Real-time connection with JWT auth</div>
+  </div>
+
+  <!-- ═══ EXPRESS SERVER ═══ -->
+  <div class="node node-api" id="n-express" style="left:420px;top:370px;width:250px"
+       data-tip="express">
+    <div class="icon">🖥️</div><div class="title">Express + Socket.IO Server</div>
+    <div class="sub">HTTP REST + WebSocket on port 5000</div>
+  </div>
+
+  <!-- ═══ ROUTES ═══ -->
+  <div class="node node-api" id="n-routes" style="left:40px;top:370px;width:180px"
+       data-tip="routes">
+    <div class="icon">🛣️</div><div class="title">REST Routes</div>
+    <div class="sub">auth · users · messages · account · upload</div>
+  </div>
+
+  <!-- ═══ MIDDLEWARE / UTILS ═══ -->
+  <div class="node node-util" id="n-auth" style="left:750px;top:370px;width:160px"
+       data-tip="authmw">
+    <div class="icon">🛡️</div><div class="title">Auth Middleware</div>
+    <div class="sub">JWT verification for REST & Socket</div>
+  </div>
+  <div class="node node-util" id="n-validate" style="left:940px;top:370px;width:150px"
+       data-tip="validate">
+    <div class="icon">✅</div><div class="title">Password Validator</div>
+    <div class="sub">Shared rules: 8+ chars, upper, lower, digit, special</div>
+  </div>
+
+  <!-- ═══ DATA LAYER ═══ -->
+  <div class="node node-data" id="n-mongo" style="left:300px;top:570px;width:200px"
+       data-tip="mongo">
+    <div class="icon">🍃</div><div class="title">MongoDB</div>
+    <div class="sub">Users collection + Messages collection</div>
+  </div>
+  <div class="node node-data" id="n-usermodel" style="left:60px;top:570px;width:170px"
+       data-tip="usermodel">
+    <div class="icon">👤</div><div class="title">User Model</div>
+    <div class="sub">username · passwordHash · bcrypt compare</div>
+  </div>
+  <div class="node node-data" id="n-msgmodel" style="left:560px;top:570px;width:180px"
+       data-tip="msgmodel">
+    <div class="icon">✉️</div><div class="title">Message Model</div>
+    <div class="sub">type · from · to · content · media · timestamp</div>
+  </div>
+
+  <!-- ═══ FILE STORAGE ═══ -->
+  <div class="node node-file" id="n-uploads" style="left:800px;top:570px;width:190px"
+       data-tip="uploads">
+    <div class="icon">📂</div><div class="title">File Storage (Disk)</div>
+    <div class="sub">Multer → /uploads/ · 10 MB limit · static serving</div>
+  </div>
+
+  <!-- ═══ ONLINE USERS ═══ -->
+  <div class="node node-api" id="n-presence" style="left:750px;top:210px;width:170px"
+       data-tip="presence">
+    <div class="icon">🟢</div><div class="title">Presence Tracker</div>
+    <div class="sub">In-memory Map: username → socket.id</div>
+  </div>
+
+  <!-- ═══ Edge Labels ═══ -->
+  <div class="edge-label" style="left:110px;top:180px;background:rgba(108,92,231,.2);color:var(--accent)">POST /api/auth</div>
+  <div class="edge-label" style="left:340px;top:180px;background:rgba(0,206,201,.2);color:var(--accent2)">WebSocket</div>
+  <div class="edge-label" style="left:230px;top:340px;background:rgba(0,206,201,.2);color:var(--accent2)">HTTP + WS</div>
+  <div class="edge-label" style="left:520px;top:520px;background:rgba(253,121,168,.2);color:var(--accent3)">Mongoose</div>
+  <div class="edge-label" style="left:710px;top:520px;background:rgba(253,203,110,.2);color:var(--accent4)">Multer save</div>
+  <div class="edge-label" style="left:830px;top:300px;background:rgba(85,239,196,.2);color:var(--accent5)">JWT verify</div>
+  <div class="edge-label" style="left:760px;top:170px;background:rgba(0,206,201,.2);color:var(--accent2)">presence:update</div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<div class="footer">LAN Chat System Architecture · Built from codebase analysis · Hover nodes for details</div>
+
+<script>
+/* ── Tooltip Data ── */
+const tips = {
+  login: {
+    title: 'Login Page',
+    desc: 'Collects username & password, calls POST /api/auth/login. On success stores JWT + username in localStorage and redirects to /chat.',
+    tech: ['React','Chakra UI','Axios','React Router'],
+    files: 'LoginPage.jsx → api/auth.js → authRoutes → authController'
+  },
+  register: {
+    title: 'Register Page',
+    desc: 'Account creation with real-time password-strength checklist (8+ chars, upper, lower, digit, special). Calls POST /api/auth/register, auto-logs in on success.',
+    tech: ['React','PasswordChecklist','Validation'],
+    files: 'RegisterPage.jsx → api/auth.js → authRoutes → authController'
+  },
+  chat: {
+    title: 'Chat Page (Main UI)',
+    desc: 'Three-panel layout: sidebar (channels + DM threads), message area (grouped by author, 5 min window), presence list. Connects Socket.IO on mount; listens to message:public, message:dm, message:deleted, presence:update events.',
+    tech: ['Socket.IO Client','REST History','File Upload'],
+    files: 'ChatPage.jsx → socket.js + api/*'
+  },
+  settings: {
+    title: 'Settings Panel',
+    desc: 'Modal overlay for changing password (with checklist) and permanently deleting account + all messages. Uses PUT /api/account/password and DELETE /api/account.',
+    tech: ['Chakra Modal','Account API'],
+    files: 'SettingsPanel.jsx → api/account.js → accountRoutes'
+  },
+  attach: {
+    title: 'Attachment Menu',
+    desc: 'WhatsApp-style file picker with 10 categories (Photos, Video, Audio, PDF, Doc, Sheet, Text, Archive, Code, Any). Sets the hidden <input> accept attribute, then uploads via POST /api/upload.',
+    tech: ['Multer','FormData'],
+    files: 'AttachmentMenu.jsx → api/upload.js → uploadRoutes'
+  },
+  apimod: {
+    title: 'Frontend API Modules',
+    desc: 'Five Axios wrapper modules that talk to the Express backend over HTTP. Every authenticated call sends "Authorization: Bearer <token>" header.',
+    tech: ['Axios','Bearer Token'],
+    files: 'api/auth.js · users.js · messages.js · upload.js · account.js'
+  },
+  socketclient: {
+    title: 'Socket.IO Client',
+    desc: 'Singleton socket instance. Connects with { auth: { token } }. Server middleware verifies the JWT before allowing connection. Emits: message:public, message:dm, message:delete. Listens: presence:update, message:public, message:dm, message:deleted.',
+    tech: ['socket.io-client','JWT Auth'],
+    files: 'socket.js → config.js (auto-detect server IP)'
+  },
+  express: {
+    title: 'Express + Socket.IO Server',
+    desc: 'Single Node.js process on port 5000 serving both REST and WebSocket. CORS open (*). Handles public messages (broadcast), DMs (targeted emit), message deletion, and presence tracking via an in-memory Map.',
+    tech: ['Express 5','Socket.IO 4','HTTP','CORS'],
+    files: 'server.js (158 lines) — the heart of the backend'
+  },
+  routes: {
+    title: 'REST Route Handlers',
+    desc: '5 route files: authRoutes (login/register), userRoutes (list all usernames), messageRoutes (public history + DM history, 100-msg limit), accountRoutes (change pw / delete account), uploadRoutes (multer file upload).',
+    tech: ['Express Router','requireAuth middleware'],
+    files: 'routes/authRoutes · userRoutes · messageRoutes · accountRoutes · uploadRoutes'
+  },
+  authmw: {
+    title: 'Auth Middleware',
+    desc: 'Two auth layers: (1) requireAuth middleware for REST — extracts Bearer token from Authorization header, verifies with jwt.verify, attaches { id, username } to req.user. (2) Socket.IO io.use() middleware — verifies token from socket.handshake.auth.',
+    tech: ['jsonwebtoken','Bearer','Socket.IO middleware'],
+    files: 'middleware/auth.js + server.js io.use()'
+  },
+  validate: {
+    title: 'Password Validator',
+    desc: 'Shared password strength rule: ≥8 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char. Duplicated on frontend (instant feedback) and backend (server-side enforcement).',
+    tech: ['Regex','Shared rule'],
+    files: 'backend/utils/validatePassword.js ↔ frontend/utils/validation.js'
+  },
+  mongo: {
+    title: 'MongoDB Database',
+    desc: 'Connected via Mongoose using MONGO_URI from .env. Two collections: users (username + bcrypt hash, unique index) and messages (type, from, to, content, mediaUrl, mediaName, timestamp).',
+    tech: ['Mongoose 9','MongoDB'],
+    files: 'config/db.js → .env (MONGO_URI)'
+  },
+  usermodel: {
+    title: 'User Model',
+    desc: 'Schema: username (unique, trimmed, min 3 chars), passwordHash. Instance method comparePassword() uses bcrypt.compare. Timestamps enabled.',
+    tech: ['Mongoose Schema','bcryptjs'],
+    files: 'models/User.js'
+  },
+  msgmodel: {
+    title: 'Message Model',
+    desc: 'Schema: type ("public"|"dm"), from (sender username), to (recipient — DM only), content, mediaUrl, mediaName, timestamp. Used for both real-time emit and history retrieval.',
+    tech: ['Mongoose Schema','enum validation'],
+    files: 'models/Message.js'
+  },
+  uploads: {
+    title: 'File Storage (Disk)',
+    desc: 'Multer saves files to /uploads/ with unique timestamped filenames. 10 MB size limit. Express serves /uploads/ as static files so the frontend can reference mediaUrl directly.',
+    tech: ['Multer','express.static'],
+    files: 'routes/uploadRoutes.js · server.js static middleware'
+  },
+  presence: {
+    title: 'Presence Tracker',
+    desc: 'In-memory JavaScript Map storing username → socket.id. Updated on connect/disconnect. broadcastPresence() emits the full online user list to every connected client via "presence:update".',
+    tech: ['Map','Socket.IO broadcast'],
+    files: 'server.js — onlineUsers Map + broadcastPresence()'
+  }
+};
+
+/* ── Draw SVG arrows ── */
+const edges = [
+  // frontend → api layer
+  {from:'n-login',to:'n-apimod',cls:'arrow-rest'},
+  {from:'n-register',to:'n-apimod',cls:'arrow-rest'},
+  {from:'n-settings',to:'n-apimod',cls:'arrow-rest'},
+  {from:'n-chat',to:'n-socketclient',cls:'arrow-socket'},
+  {from:'n-attach',to:'n-apimod',cls:'arrow-file'},
+  // api layer → server
+  {from:'n-apimod',to:'n-routes',cls:'arrow-rest'},
+  {from:'n-socketclient',to:'n-express',cls:'arrow-socket'},
+  {from:'n-routes',to:'n-express',cls:'arrow-rest'},
+  // server → data
+  {from:'n-express',to:'n-mongo',cls:'arrow-db'},
+  {from:'n-express',to:'n-uploads',cls:'arrow-file'},
+  // models
+  {from:'n-mongo',to:'n-usermodel',cls:'arrow-db'},
+  {from:'n-mongo',to:'n-msgmodel',cls:'arrow-db'},
+  // middleware
+  {from:'n-express',to:'n-auth',cls:'arrow-static'},
+  {from:'n-auth',to:'n-validate',cls:'arrow-static'},
+  // presence
+  {from:'n-express',to:'n-presence',cls:'arrow-socket'},
+  {from:'n-presence',to:'n-chat',cls:'arrow-socket'},
+];
+
+function center(id){
+  const el=document.getElementById(id);
+  const r=el.getBoundingClientRect();
+  const cr=document.getElementById('canvas').getBoundingClientRect();
+  return {x:r.left-cr.left+r.width/2, y:r.top-cr.top+r.height/2};
+}
+
+function drawEdges(){
+  const svg=document.getElementById('arrows');
+  svg.innerHTML='';
+  edges.forEach(e=>{
+    const a=center(e.from), b=center(e.to);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);
+    line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
+    line.setAttribute('class',e.cls);
+    svg.appendChild(line);
+  });
+}
+window.addEventListener('load',drawEdges);
+window.addEventListener('resize',drawEdges);
+
+/* ── Tooltip ── */
+const tooltipEl=document.getElementById('tooltip');
+document.querySelectorAll('[data-tip]').forEach(node=>{
+  node.addEventListener('mouseenter',e=>{
+    const key=node.dataset.tip;
+    const d=tips[key]; if(!d) return;
+    tooltipEl.innerHTML=`<h3>${d.title}</h3><p>${d.desc}</p><div style="margin-top:8px">${d.tech.map(t=>`<span class="tech">${t}</span>`).join('')}</div><div class="files">📁 ${d.files}</div>`;
+    const r=node.getBoundingClientRect();
+    tooltipEl.style.left=Math.min(r.left, window.innerWidth-340)+'px';
+    tooltipEl.style.top=(r.bottom+10)+'px';
+    tooltipEl.classList.add('visible');
+  });
+  node.addEventListener('mouseleave',()=>tooltipEl.classList.remove('visible'));
+});
+</script>
+</body>
+</html>

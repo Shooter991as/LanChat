@@ -1,8 +1,10 @@
 import { Box, Flex, Field, Input, Button, Text, Stack, Link as ChakraLink } from "@chakra-ui/react";
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import bg from "../../assets/snowy.jpg";
 import { registerUser } from "../../api/auth";
+import { isStrongPassword } from "../../utils/validation";
+import { PasswordChecklist } from "./PasswordChecklist";
+import { colors, appBackground } from "../../theme/colors";
 
 export function RegisterPage({ onRegister }) {
   const [username, setUsername] = useState("");
@@ -10,26 +12,28 @@ export function RegisterPage({ onRegister }) {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
     if (!username || !password) {
       setError("Enter both username and password.");
+      return;
+    }
+    if (!isStrongPassword(password)) {
+      setError("Password doesn't meet the requirements below.");
       return;
     }
     if (password !== confirm) {
       setError("Passwords don't match.");
       return;
     }
-
     setLoading(true);
     try {
       const data = await registerUser({ username, password });
-      onRegister?.(data); // { token, username }
+      onRegister?.(data);
     } catch (err) {
-      // Backend sends a real message (e.g. "Username already taken.") — show it directly
       setError(err.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
@@ -37,27 +41,22 @@ export function RegisterPage({ onRegister }) {
   };
 
   return (
-    <Box minH="100vh" w="100%" bgImage={`url(${bg})`} bgSize="cover" bgPos="center">
-      <Flex minH="100vh" align="center" justify="center" px={4}>
+    <Box minH="100dvh" w="100%" {...appBackground}>
+      <Flex minH="100dvh" align="center" justify="center" px={4} py={8}>
         <Box
-          w="380px"
-          bg="blackAlpha.600"
-          backdropFilter="blur(10px)"
+          w="100%"
+          maxW="380px"
+          bg={colors.panel}
           border="1px solid"
-          borderColor="whiteAlpha.300"
-          borderRadius="md"
-          px={8}
+          borderColor={colors.border}
+          borderRadius="lg"
+          px={{ base: 6, sm: 8 }}
           py={10}
-          boxShadow="dark-lg"
+          boxShadow="0 20px 60px rgba(0,0,0,0.45)"
         >
           <Text
-            fontFamily="serif"
-            fontSize="2xl"
-            fontWeight="semibold"
-            color="whiteAlpha.900"
-            letterSpacing="wide"
-            mb={8}
-            textAlign="center"
+            fontFamily="serif" fontSize="2xl" fontWeight="semibold" color={colors.textHi}
+            letterSpacing="wide" mb={8} textAlign="center"
           >
             Create Account
           </Text>
@@ -65,59 +64,62 @@ export function RegisterPage({ onRegister }) {
           <form onSubmit={handleSubmit}>
             <Stack gap={5}>
               <Field.Root>
-                <Field.Label color="whiteAlpha.800" fontSize="sm">Username</Field.Label>
+                <Field.Label color={colors.textMid} fontSize="sm">Username</Field.Label>
                 <Input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                  _placeholder={{ color: "whiteAlpha.500" }}
-                  _focus={{ borderColor: "whiteAlpha.700" }}
+                  bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                  _placeholder={{ color: colors.textDim }}
+                  _focus={{ borderColor: colors.accent, boxShadow: `0 0 0 1px ${colors.accent}` }}
                   placeholder="choose a username"
                 />
               </Field.Root>
 
               <Field.Root>
-                <Field.Label color="whiteAlpha.800" fontSize="sm">Password</Field.Label>
+                <Field.Label color={colors.textMid} fontSize="sm">Password</Field.Label>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                  _placeholder={{ color: "whiteAlpha.500" }}
-                  _focus={{ borderColor: "whiteAlpha.700" }}
-                  placeholder="at least 6 characters"
+                  onFocus={() => setPasswordFocused(true)}
+                  bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                  _placeholder={{ color: colors.textDim }}
+                  _focus={{ borderColor: colors.accent, boxShadow: `0 0 0 1px ${colors.accent}` }}
+                  placeholder="choose a strong password"
                 />
+                {(passwordFocused || password) && <PasswordChecklist password={password} />}
               </Field.Root>
 
               <Field.Root>
-                <Field.Label color="whiteAlpha.800" fontSize="sm">Confirm Password</Field.Label>
+                <Field.Label color={colors.textMid} fontSize="sm">Confirm Password</Field.Label>
                 <Input
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-                  _placeholder={{ color: "whiteAlpha.500" }}
-                  _focus={{ borderColor: "whiteAlpha.700" }}
+                  bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                  _placeholder={{ color: colors.textDim }}
+                  _focus={{ borderColor: colors.accent, boxShadow: `0 0 0 1px ${colors.accent}` }}
                   placeholder="••••••••"
                 />
               </Field.Root>
 
-              {error && <Text color="red.300" fontSize="sm">{error}</Text>}
+              {error && <Text color={colors.danger} fontSize="sm">{error}</Text>}
 
               <Button
                 type="submit"
                 loading={loading}
-                bg="whiteAlpha.900" color="blackAlpha.900"
-                _hover={{ bg: "white" }}
-                borderRadius="sm"
+                bg={colors.accent}
+                color="white"
+                _hover={{ bg: colors.accentHover }}
+                borderRadius="md"
                 mt={2}
               >
                 Register
               </Button>
 
-              <Text textAlign="center" fontSize="sm" color="whiteAlpha.700">
+              <Text textAlign="center" fontSize="sm" color={colors.textMid}>
                 Already have an account?{" "}
-                <ChakraLink as={RouterLink} to="/" color="whiteAlpha.900" fontWeight="semibold">
+                <ChakraLink as={RouterLink} to="/" color={colors.textHi} fontWeight="semibold">
                   Log in
                 </ChakraLink>
               </Text>

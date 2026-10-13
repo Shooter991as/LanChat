@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Message from "../models/Message.js";
 import { requireAuth } from "../middleware/auth.js";
+import { isStrongPassword, PASSWORD_RULES_MESSAGE } from "../utils/validatePassword.js";
 
 const router = express.Router();
 
@@ -12,8 +13,8 @@ router.put("/password", requireAuth, async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "Both current and new password are required." });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ message: PASSWORD_RULES_MESSAGE });
     }
 
     const user = await User.findById(req.user.id);
@@ -45,7 +46,6 @@ router.delete("/", requireAuth, async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ message: "Incorrect password." });
 
-    // Clean up their messages too, so deleted accounts don't leave orphaned chat history
     await Message.deleteMany({ $or: [{ from: user.username }, { to: user.username }] });
     await User.findByIdAndDelete(user._id);
 

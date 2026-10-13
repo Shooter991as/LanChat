@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { isStrongPassword, PASSWORD_RULES_MESSAGE } from "../utils/validatePassword.js";
 
 function signToken(user) {
   return jwt.sign(
@@ -17,8 +18,8 @@ export async function register(req, res) {
     if (!username || !password) {
       return res.status(400).json({ message: "Username and password are required." });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ message: PASSWORD_RULES_MESSAGE });
     }
 
     const existing = await User.findOne({ username });
@@ -26,7 +27,7 @@ export async function register(req, res) {
       return res.status(409).json({ message: "Username already taken." });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10); // 10 salt rounds — standard default
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, passwordHash });
 
     const token = signToken(user);

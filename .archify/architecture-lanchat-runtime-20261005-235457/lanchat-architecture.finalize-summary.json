@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+    "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+    "bytes": 5773
+  },
+  "artifact": {
+    "path": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+    "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+    "bytes": 763369
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json\".",
+      "subject": {
+        "artifact": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+        "evidencePath": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.finalize.json",
+    "summaryReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.finalize-summary.json",
+    "browserCheckReceipt": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-05T18:25:18.609Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 564
+}

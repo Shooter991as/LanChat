@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0eb14abd-d86c-4b07-ae80-ccedf231a32f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/candidate.json",
+  "output": "/home/tls123/Projects/final_chat/.archify/architecture-lanchat-runtime-20261005-235457/lanchat-architecture.html",
+  "specification": {
+    "sha256": "b5b6ffc300565b836c7c65483eac42b5ff5ac72469663d66318857fc956ed30f",
+    "bytes": 5773
+  },
+  "artifact": {
+    "sha256": "17c4a5e1d09e45157dc9ba3ba8ecc68760a3963decf4b01db3790bd7280e1132",
+    "bytes": 763369
+  }
+}

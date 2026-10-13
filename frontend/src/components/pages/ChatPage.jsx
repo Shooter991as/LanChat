@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Flex, Text, Input, Button, Stack, HStack } from "@chakra-ui/react";
-import bg from "../../assets/snowy.jpg";
 import { connectSocket, getSocket, disconnectSocket } from "../../socket";
 import { fetchAllUsers } from "../../api/users";
 import { fetchPublicHistory, fetchDMHistory } from "../../api/messages";
 import { uploadFile } from "../../api/upload";
-import { SERVER_URL } from "../../config";
 import { SettingsPanel } from "./SettingsPanel";
+import { AttachmentMenu } from "./AttachmentMenu";
+import { MessageBubble } from "./MessageBubble";
+import { SelectionBar } from "./SelectionBar";
+import { colors, appBackground } from "../../theme/colors";
 
-const GROUP_WINDOW_MS = 5 * 60 * 1000; // messages within 5 min of same author stack together
-
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg)$/i;
+const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
 export function ChatPage({ user, onLogout }) {
   const [allUsers, setAllUsers] = useState([]);
@@ -21,6 +21,16 @@ export function ChatPage({ user, onLogout }) {
   const [loadedDMs, setLoadedDMs] = useState(new Set());
   const [draft, setDraft] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+
+  // Mobile layout: sidebars become overlay drawers instead of fixed columns
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
+
+  // Long-press / tap-to-select message deletion
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -42,13 +52,15 @@ export function ChatPage({ user, onLogout }) {
       setOpenDMs((prev) => (prev.includes(otherParty) ? prev : [...prev, otherParty]));
     });
 
-    socket.on("message:deleted", ({ id, scope, withUser }) => {
+    // Accepts either a single `id` (legacy) or a bulk `ids` array
+    socket.on("message:deleted", ({ id, ids, scope, withUser }) => {
+      const deletedIds = new Set(ids || [id]);
       setMessages((prev) => {
         if (scope === "public") {
-          return { ...prev, public: prev.public.filter((m) => m.id !== id) };
+          return { ...prev, public: prev.public.filter((m) => !deletedIds.has(m.id)) };
         }
         const thread = prev.dms[withUser] || [];
-        return { ...prev, dms: { ...prev.dms, [withUser]: thread.filter((m) => m.id !== id) } };
+        return { ...prev, dms: { ...prev.dms, [withUser]: thread.filter((m) => !deletedIds.has(m.id)) } };
       });
     });
 
@@ -83,6 +95,7 @@ export function ChatPage({ user, onLogout }) {
     if (username === user.username) return;
     setOpenDMs((prev) => (prev.includes(username) ? prev : [...prev, username]));
     setActiveChat({ type: "dm", username });
+    setRightOpen(false); // close the drawer after picking someone, on mobile
 
     if (!loadedDMs.has(username)) {
       try {
@@ -108,6 +121,14 @@ export function ChatPage({ user, onLogout }) {
     setDraft("");
   };
 
+  const handleAttachmentTypeSelected = (type) => {
+    setShowAttachMenu(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = type.accept === "*" ? "" : type.accept;
+      fileInputRef.current.click();
+    }
+  };
+
   const handleFileSelected = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -117,235 +138,266 @@ export function ChatPage({ user, onLogout }) {
       if (activeChat.type === "public") {
         socket.emit("message:public", { content: "", mediaUrl: url, mediaName: originalName });
       } else {
-        socket.emit("message:dm", {
-          toUsername: activeChat.username,
-          content: "",
-          mediaUrl: url,
-          mediaName: originalName,
-        });
+        socket.emit("message:dm", { toUsername: activeChat.username, content: "", mediaUrl: url, mediaName: originalName });
       }
     } catch (err) {
       console.error("Upload failed:", err);
     } finally {
-      e.target.value = ""; // allows re-selecting the same file later
+      e.target.value = "";
     }
   };
 
-  const handleDelete = (id) => {
+  const quickDelete = (id) => {
     getSocket().emit("message:delete", { id });
+  };
+
+  const enterSelection = (id) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.size === 0) setSelectionMode(false);
+      return next;
+    });
+  };
+
+  const cancelSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const bulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    getSocket().emit("message:delete", { ids: Array.from(selectedIds) });
+    cancelSelection();
   };
 
   const activeMessages =
     activeChat.type === "public" ? messages.public : messages.dms[activeChat.username] || [];
   const activeTitle = activeChat.type === "public" ? "Public" : activeChat.username;
 
-  return (
-    <Box h="100vh" w="100%" overflow="hidden" bgImage={`url(${bg})`} bgSize="cover" bgPos="center">
-      <Flex h="100%" p={4} gap={4}>
-        {/* Left: conversations */}
-        <Box
-          w="220px" bg="blackAlpha.600" backdropFilter="blur(10px)"
-          border="1px solid" borderColor="whiteAlpha.300" borderRadius="md"
-          p={4} overflowY="auto" display="flex" flexDirection="column"
-        >
-          <Text fontFamily="serif" fontSize="lg" color="whiteAlpha.900" mb={4}>LAN Chat</Text>
+  const leftSidebarContent = (
+    <>
+      <Text fontFamily="serif" fontSize="lg" color={colors.textHi} mb={4}>LAN Chat</Text>
 
-          <Text fontSize="xs" color="whiteAlpha.500" mb={2} letterSpacing="wide">CHANNELS</Text>
+      <Text fontSize="xs" color={colors.textDim} mb={2} letterSpacing="wide">CHANNELS</Text>
+      <Box
+        px={2} py={2} mb={4} borderRadius="md" cursor="pointer"
+        bg={activeChat.type === "public" ? colors.panelRaised : "transparent"}
+        color={colors.textHi}
+        onClick={() => { setActiveChat({ type: "public" }); setLeftOpen(false); }}
+      >
+        # Public
+      </Box>
+
+      <Text fontSize="xs" color={colors.textDim} mb={2} letterSpacing="wide">DIRECT MESSAGES</Text>
+      <Stack gap={1}>
+        {openDMs.length === 0 && (
+          <Text fontSize="sm" color={colors.textDim}>Open a user from the list to start a DM</Text>
+        )}
+        {openDMs.map((username) => (
           <Box
-            px={2} py={2} mb={4} borderRadius="sm" cursor="pointer"
-            bg={activeChat.type === "public" ? "whiteAlpha.200" : "transparent"}
-            color="whiteAlpha.900"
-            onClick={() => setActiveChat({ type: "public" })}
+            key={username}
+            px={2} py={2} borderRadius="md" cursor="pointer"
+            bg={activeChat.type === "dm" && activeChat.username === username ? colors.panelRaised : "transparent"}
+            color={colors.textHi}
+            onClick={() => { setActiveChat({ type: "dm", username }); setLeftOpen(false); }}
           >
-            # Public
+            {username}
           </Box>
+        ))}
+      </Stack>
 
-          <Text fontSize="xs" color="whiteAlpha.500" mb={2} letterSpacing="wide">DIRECT MESSAGES</Text>
-          <Stack gap={1}>
-            {openDMs.length === 0 && (
-              <Text fontSize="sm" color="whiteAlpha.500">Click a user on the right to start a DM</Text>
-            )}
-            {openDMs.map((username) => (
-              <Box
-                key={username}
-                px={2} py={2} borderRadius="sm" cursor="pointer"
-                bg={activeChat.type === "dm" && activeChat.username === username ? "whiteAlpha.200" : "transparent"}
-                color="whiteAlpha.900"
-                onClick={() => openDM(username)}
-              >
-                {username}
-              </Box>
-            ))}
-          </Stack>
+      <Box mt="auto" pt={4}>
+        <Button size="sm" variant="outline" borderColor={colors.border} color={colors.textMid} w="full" mb={2} onClick={() => setShowSettings(true)}>
+          Settings
+        </Button>
+        <Button size="sm" variant="outline" borderColor={colors.border} color={colors.textMid} w="full" onClick={handleLogout}>
+          Log out
+        </Button>
+      </Box>
+    </>
+  );
 
-          <Box mt="auto" pt={4}>
-            <Button
-              size="sm" variant="outline" borderColor="whiteAlpha.400" color="whiteAlpha.800"
-              w="full" mb={2} onClick={() => setShowSettings(true)}
+  const rightSidebarContent = (
+    <>
+      <Text fontSize="xs" color={colors.textDim} mb={3} letterSpacing="wide">
+        USERS — {onlineUsers.length} ONLINE
+      </Text>
+      <Stack gap={1}>
+        {allUsers.map((username) => {
+          const isOnline = onlineUsers.includes(username);
+          const isMe = username === user.username;
+          return (
+            <HStack
+              key={username} px={2} py={2} borderRadius="md"
+              cursor={isMe ? "default" : "pointer"}
+              _hover={{ bg: isMe ? "transparent" : colors.panelRaised }}
+              onClick={() => !isMe && openDM(username)}
             >
-              Settings
-            </Button>
-            <Button
-              size="sm" variant="outline" borderColor="whiteAlpha.400" color="whiteAlpha.800" w="full"
-              onClick={handleLogout}
-            >
-              Log out
-            </Button>
-          </Box>
-        </Box>
+              <Box w="8px" h="8px" borderRadius="full" flexShrink={0} bg={isOnline ? colors.online : colors.textDim} />
+              <Text fontSize="sm" color={colors.textHi}>{username} {isMe ? "(you)" : ""}</Text>
+            </HStack>
+          );
+        })}
+      </Stack>
+    </>
+  );
 
-        {/* Center: active conversation */}
+  return (
+    <Box h="100dvh" w="100%" overflow="hidden" {...appBackground}>
+      <Flex h="100%" direction="column">
+        {/* Mobile-only top bar: opens the two drawers that replace fixed sidebars */}
         <Flex
-          flex="1" minH={0} direction="column" bg="blackAlpha.600" backdropFilter="blur(10px)"
-          border="1px solid" borderColor="whiteAlpha.300" borderRadius="md" overflow="hidden"
+          display={{ base: "flex", md: "none" }}
+          align="center" justify="space-between"
+          px={4} py={3} borderBottom="1px solid" borderColor={colors.border}
+          bg={colors.panel}
         >
-          <Box px={5} py={3} borderBottom="1px solid" borderColor="whiteAlpha.300">
-            <Text color="whiteAlpha.900" fontWeight="semibold">
-              {activeChat.type === "public" ? "# " : ""}{activeTitle}
-            </Text>
-          </Box>
-
-          <Box ref={scrollRef} flex="1" minH={0} overflowY="auto" px={5} py={4}>
-            <Stack gap={0.5}>
-              {activeMessages.length === 0 && (
-                <Text fontSize="sm" color="whiteAlpha.500">No messages yet.</Text>
-              )}
-              {activeMessages.map((m, i) => {
-                const author = m.username || m.fromUsername || m.from;
-                const mine = author === user.username;
-                const prev = activeMessages[i - 1];
-                const prevAuthor = prev ? prev.username || prev.fromUsername || prev.from : null;
-                const gapMs = prev ? Math.abs(new Date(m.timestamp) - new Date(prev.timestamp)) : Infinity;
-                const isGrouped = prevAuthor === author && gapMs < GROUP_WINDOW_MS;
-                const isImage = m.mediaUrl && IMAGE_EXT.test(m.mediaUrl);
-
-                return (
-                  <Box key={m.id} alignSelf={mine ? "flex-end" : "flex-start"} maxW="75%" mt={isGrouped ? 0.5 : 3}>
-                    {!isGrouped && (
-                      <Text fontSize="xs" color="whiteAlpha.500" mb={0.5}>
-                        {mine ? "You" : author} ·{" "}
-                        {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </Text>
-                    )}
-                    <Box
-                      role="group"
-                      position="relative"
-                      bg={mine ? "whiteAlpha.300" : "whiteAlpha.100"} color="whiteAlpha.900"
-                      px={m.mediaUrl && !m.content ? 1 : 3} py={m.mediaUrl && !m.content ? 1 : 2}
-                      borderRadius="md" fontSize="sm"
-                    >
-                      {m.mediaUrl && (
-                        isImage ? (
-                          <Box
-                            as="img"
-                            src={`${SERVER_URL}${m.mediaUrl}`}
-                            maxW="240px"
-                            borderRadius="sm"
-                            display="block"
-                          />
-                        ) : (
-                          <Text
-                            as="a"
-                            href={`${SERVER_URL}${m.mediaUrl}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            textDecoration="underline"
-                            px={m.content ? 0 : 2}
-                          >
-                            📎 {m.mediaName || "attachment"}
-                          </Text>
-                        )
-                      )}
-                      {m.content && <Text mt={m.mediaUrl ? 1 : 0}>{m.content}</Text>}
-
-                      {mine && (
-                        <Button
-                          size="2xs"
-                          variant="ghost"
-                          position="absolute"
-                          top="-2px"
-                          right={mine ? "auto" : "-2px"}
-                          left={mine ? "-28px" : "auto"}
-                          opacity={0}
-                          _groupHover={{ opacity: 1 }}
-                          color="whiteAlpha.600"
-                          _hover={{ color: "red.300" }}
-                          onClick={() => handleDelete(m.id)}
-                          title="Unsend"
-                        >
-                          ✕
-                        </Button>
-                      )}
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Stack>
-          </Box>
-
-          <HStack p={3} borderTop="1px solid" borderColor="whiteAlpha.300">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelected}
-              style={{ display: "none" }}
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              variant="ghost" color="whiteAlpha.700" px={2}
-              title="Attach a file"
-            >
-              📎
-            </Button>
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder={`Message ${activeChat.type === "public" ? "#public" : activeTitle}...`}
-              bg="whiteAlpha.100" color="white" borderColor="whiteAlpha.400"
-              _placeholder={{ color: "whiteAlpha.500" }}
-            />
-            <Button onClick={sendMessage} bg="whiteAlpha.900" color="blackAlpha.900" _hover={{ bg: "white" }}>
-              Send
-            </Button>
-          </HStack>
+          <Button size="sm" variant="ghost" color={colors.textHi} onClick={() => setLeftOpen(true)}>☰</Button>
+          <Text color={colors.textHi} fontWeight="semibold" fontSize="sm">
+            {activeChat.type === "public" ? "# Public" : activeTitle}
+          </Text>
+          <Button size="sm" variant="ghost" color={colors.textHi} onClick={() => setRightOpen(true)}>👥</Button>
         </Flex>
 
-        {/* Right: presence */}
-        <Box
-          w="220px" bg="blackAlpha.600" backdropFilter="blur(10px)"
-          border="1px solid" borderColor="whiteAlpha.300" borderRadius="md"
-          p={4} overflowY="auto"
-        >
-          <Text fontSize="xs" color="whiteAlpha.500" mb={3} letterSpacing="wide">
-            USERS — {onlineUsers.length} ONLINE
-          </Text>
-          <Stack gap={1}>
-            {allUsers.map((username) => {
-              const isOnline = onlineUsers.includes(username);
-              const isMe = username === user.username;
-              return (
-                <HStack
-                  key={username} px={2} py={2} borderRadius="sm"
-                  cursor={isMe ? "default" : "pointer"}
-                  _hover={{ bg: isMe ? "transparent" : "whiteAlpha.100" }}
-                  onClick={() => !isMe && openDM(username)}
-                >
-                  <Box w="8px" h="8px" borderRadius="full" bg={isOnline ? "green.400" : "whiteAlpha.400"} />
-                  <Text fontSize="sm" color="whiteAlpha.900">{username} {isMe ? "(you)" : ""}</Text>
-                </HStack>
-              );
-            })}
-          </Stack>
-        </Box>
+        <Flex flex="1" minH={0} p={{ base: 0, md: 4 }} gap={{ base: 0, md: 4 }}>
+          {/* Left sidebar: fixed column on desktop, slide-over drawer on mobile */}
+          <Box
+            display={{ base: leftOpen ? "flex" : "none", md: "flex" }}
+            flexDirection="column"
+            position={{ base: "fixed", md: "relative" }}
+            inset={{ base: 0, md: "auto" }}
+            zIndex={{ base: 20, md: "auto" }}
+            w={{ base: "100%", md: "230px" }}
+            minW={{ md: "230px" }}
+            bg={colors.panel}
+            borderRight={{ md: "1px solid" }}
+            borderColor={colors.border}
+            borderRadius={{ base: 0, md: "lg" }}
+            p={4}
+            overflowY="auto"
+          >
+            <Flex display={{ base: "flex", md: "none" }} justify="flex-end" mb={2}>
+              <Button size="sm" variant="ghost" color={colors.textMid} onClick={() => setLeftOpen(false)}>✕</Button>
+            </Flex>
+            {leftSidebarContent}
+          </Box>
+
+          {/* Center: active conversation */}
+          <Flex
+            flex="1" minH={0} direction="column"
+            bg={colors.panel}
+            border={{ md: "1px solid" }}
+            borderColor={colors.border}
+            borderRadius={{ base: 0, md: "lg" }}
+            overflow="hidden"
+            position="relative"
+          >
+            {selectionMode ? (
+              <SelectionBar count={selectedIds.size} onCancel={cancelSelection} onDelete={bulkDelete} />
+            ) : (
+              <Box display={{ base: "none", md: "block" }} px={5} py={3} borderBottom="1px solid" borderColor={colors.border}>
+                <Text color={colors.textHi} fontWeight="semibold">
+                  {activeChat.type === "public" ? "# " : ""}{activeTitle}
+                </Text>
+              </Box>
+            )}
+
+            <Box ref={scrollRef} flex="1" minH={0} overflowY="auto" px={5} py={4}>
+              <Stack gap={0.5}>
+                {activeMessages.length === 0 && (
+                  <Text fontSize="sm" color={colors.textDim}>No messages yet.</Text>
+                )}
+                {activeMessages.map((m, i) => {
+                  const author = m.username || m.fromUsername || m.from;
+                  const mine = author === user.username;
+                  const prev = activeMessages[i - 1];
+                  const prevAuthor = prev ? prev.username || prev.fromUsername || prev.from : null;
+                  const gapMs = prev ? Math.abs(new Date(m.timestamp) - new Date(prev.timestamp)) : Infinity;
+                  const isGrouped = prevAuthor === author && gapMs < GROUP_WINDOW_MS;
+
+                  return (
+                    <Box key={m.id} mt={isGrouped ? 0.5 : 3}>
+                      {!isGrouped && (
+                        <Flex justify={mine ? "flex-end" : "flex-start"} mb={0.5}>
+                          <Text fontSize="xs" color={colors.textDim}>
+                            {mine ? "You" : author} ·{" "}
+                            {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </Text>
+                        </Flex>
+                      )}
+                      <MessageBubble
+                        message={m}
+                        mine={mine}
+                        isGrouped={isGrouped}
+                        author={author}
+                        selectionMode={selectionMode}
+                        selected={selectedIds.has(m.id)}
+                        onEnterSelection={enterSelection}
+                        onToggleSelect={toggleSelect}
+                        onQuickDelete={quickDelete}
+                      />
+                    </Box>
+                  );
+                })}
+              </Stack>
+            </Box>
+
+            {showAttachMenu && (
+              <AttachmentMenu onSelect={handleAttachmentTypeSelected} onClose={() => setShowAttachMenu(false)} />
+            )}
+
+            <HStack p={3} borderTop="1px solid" borderColor={colors.border}>
+              <input type="file" ref={fileInputRef} onChange={handleFileSelected} style={{ display: "none" }} />
+              <Button onClick={() => setShowAttachMenu((v) => !v)} variant="ghost" color={colors.textMid} px={2} title="Attach a file">
+                📎
+              </Button>
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder={`Message ${activeChat.type === "public" ? "#public" : activeTitle}...`}
+                bg={colors.panelRaised} color={colors.textHi} borderColor={colors.border}
+                _placeholder={{ color: colors.textDim }}
+                _focus={{ borderColor: colors.accent, boxShadow: `0 0 0 1px ${colors.accent}` }}
+              />
+              <Button onClick={sendMessage} bg={colors.accent} color="white" _hover={{ bg: colors.accentHover }}>
+                Send
+              </Button>
+            </HStack>
+          </Flex>
+
+          {/* Right sidebar: fixed column on desktop, slide-over drawer on mobile */}
+          <Box
+            display={{ base: rightOpen ? "flex" : "none", md: "flex" }}
+            flexDirection="column"
+            position={{ base: "fixed", md: "relative" }}
+            inset={{ base: 0, md: "auto" }}
+            zIndex={{ base: 20, md: "auto" }}
+            w={{ base: "100%", md: "230px" }}
+            minW={{ md: "230px" }}
+            bg={colors.panel}
+            borderLeft={{ md: "1px solid" }}
+            borderColor={colors.border}
+            borderRadius={{ base: 0, md: "lg" }}
+            p={4}
+            overflowY="auto"
+          >
+            <Flex display={{ base: "flex", md: "none" }} justify="flex-end" mb={2}>
+              <Button size="sm" variant="ghost" color={colors.textMid} onClick={() => setRightOpen(false)}>✕</Button>
+            </Flex>
+            {rightSidebarContent}
+          </Box>
+        </Flex>
       </Flex>
 
       {showSettings && (
-        <SettingsPanel
-          user={user}
-          onClose={() => setShowSettings(false)}
-          onAccountDeleted={handleLogout}
-        />
+        <SettingsPanel user={user} onClose={() => setShowSettings(false)} onAccountDeleted={handleLogout} />
       )}
     </Box>
   );
